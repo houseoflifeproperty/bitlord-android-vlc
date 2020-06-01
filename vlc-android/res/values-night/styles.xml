@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.VLC"
+        parent="Theme.VLC.Black" />
+
+    <style name="Theme.VLC.Info"
+           parent="Theme.VLC.Info.Black"/>
+
+    <style name="VLCTransparentTheme" parent="VLCTransparentThemeDark"/>
+</resources>

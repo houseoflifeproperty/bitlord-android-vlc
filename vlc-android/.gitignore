@@ -1,0 +1,8 @@
+bin/
+gen/
+libs/
+obj/
+.settings
+
+assets/lua/
+assets/*.so

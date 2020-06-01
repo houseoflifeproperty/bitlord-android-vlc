@@ -1,0 +1,161 @@
+cache:
+    paths:
+        - .gradle/
+        - gradle-5.4.1/
+        - gradle/
+        - gradlew
+
+.build-all-base:
+    image: registry.videolan.org:5000/vlc-debian-android:20191127102317
+    tags:
+        - debian 
+        - android
+    stage: build
+    script:
+        - ./buildsystem/compile.sh ${EXTRA_BUILD_PARAM} -a ${ARCH}
+    variables:
+        MAKEFLAGS: -j8
+
+# Rebuilds libvlc JNI
+.build-libvlc-base:
+    extends: .build-all-base
+    only:
+        refs:
+            - master
+            - merge_requests
+        changes:
+            # For build script, we rely on the .build-ml-base config
+            # which will also build libvlc
+            - libvlc/**/*
+    except:
+        - schedules
+    variables:
+        EXTRA_BUILD_PARAM: -l
+
+# rebuild the medialibrary JNI component
+# This implies rebuilding VLC beforehand
+.build-ml-base:
+    extends: .build-all-base
+    only:
+        refs:
+            - master
+            - merge_requests
+        changes:
+            - medialibrary/**/*
+            - buildsystem/**/*
+    except:
+        - schedules
+    variables:
+        EXTRA_BUILD_PARAM: -ml
+
+# vlc-android app only: don't rebuild everything but use a published artifact
+continuous-app-build:
+    extends: .build-all-base
+    script:
+        - ./buildsystem/compile.sh --init
+        - ./gradlew assembleDebug
+    only:
+        refs:
+            - master
+            - merge_requests
+        changes:
+            - vlc-android/**/*
+            - resources/assets/**/*
+            - ./buildsystem/gitlab/gitlab-ci.yml
+    except:
+        refs:
+            - schedules
+        changes:
+            - buildsystem/**/*
+            - libvlc/**/*
+            - medialibrary/**/*
+
+#################################
+# Template config instantiation #
+#################################
+
+build-libvlc-arm64:
+    extends: .build-libvlc-base
+    variables:
+        ARCH: arm64
+
+build-libvlc-armv7:
+    extends: .build-libvlc-base
+    variables:
+        ARCH: arm
+
+build-libvlc-x86:
+    extends: .build-libvlc-base
+    variables:
+        ARCH: x86
+
+build-libvlc-x86_64:
+    extends: .build-libvlc-base
+    variables:
+        ARCH: x86_64
+
+build-ml-arm64:
+    extends: .build-ml-base
+    variables:
+        ARCH: arm64
+
+build-ml-armv7:
+    extends: .build-ml-base
+    variables:
+        ARCH: arm
+
+build-ml-x86:
+    extends: .build-ml-base
+    variables:
+        ARCH: x86
+
+build-ml-x86_64:
+    extends: .build-ml-base
+    variables:
+        ARCH: x86_64
+
+# Nightly builds: build native & app code, and ship the APK as artifact
+nightly-arm64:
+    extends: .build-all-base
+    only: 
+        - schedules
+    variables:
+        ARCH: arm64
+    artifacts:
+        paths:
+            - vlc-android/build/outputs/apk/dev/VLC-Android-*.apk
+        expire_in: 2 weeks
+
+nightly-armv7:
+    extends: .build-all-base
+    only: 
+        - schedules
+    variables:
+        ARCH: arm
+    artifacts:
+        paths:
+            - vlc-android/build/outputs/apk/dev/VLC-Android-*.apk
+        expire_in: 2 weeks
+
+nightly-x86:
+    extends: .build-all-base
+    only: 
+        - schedules
+    variables:
+        ARCH: x86
+    artifacts:
+        paths:
+            - vlc-android/build/outputs/apk/dev/VLC-Android-*.apk
+        expire_in: 2 weeks
+
+nightly-x86_64:
+    extends: .build-all-base
+    only: 
+        - schedules
+    variables:
+        ARCH: x86_64
+    artifacts:
+        paths:
+            - vlc-android/build/outputs/apk/dev/VLC-Android-*.apk
+        expire_in: 2 weeks
+
